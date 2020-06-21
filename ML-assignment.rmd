@@ -1,0 +1,72 @@
+---
+title: "ML assignment"
+author: "Yalun"
+date: "6/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Getting and cleaning the data
+
+```{r }
+setwd("~/Downloads")
+training <- read.csv("pml-training.csv",na.strings=c("NA","#DIV/0!", ""))
+testing <- read.csv("pml-testing.csv",na.strings=c("NA","#DIV/0!", ""))
+
+training<-training[,colSums(is.na(training)) == 0]
+testing <-testing[,colSums(is.na(testing)) == 0]
+
+training<-training[,8:60]
+testing <-testing[,8:60]
+```
+training and testing data were extracted from csv files, and missing values was recognized as NAs.  Then the columns with missing values were removed, and the data was further cleaned so that unrelated information (such as name and time) was not included.
+
+## Subset training data
+
+You can also embed plots, for example:
+
+```{r }
+library(caret)
+
+sub <- createDataPartition(y=training$classe, p=0.75, list=FALSE)
+trainingsub <- training[sub, ] 
+testingsub <- training[-sub, ]
+```
+
+the training data set was further divided into trainingsub and testingsub, so that our models could later be evaluated.
+
+## Model 1: decision tree
+```{r}
+library(rpart)
+model1 <- rpart(classe ~ ., data=trainingsub, method="class")
+prediction1 <- predict(model1, testingsub, type = "class")
+confusionMatrix(prediction1, testingsub$classe)
+```
+
+## Model 2: random forest
+```{r}
+
+library(randomForest)
+model2 <- randomForest(classe ~. , data=trainingsub, method="class")
+prediction2 <- predict(model2, testingsub, type = "class")
+confusionMatrix(prediction2, testingsub$classe)
+```
+
+## Model3:SVM
+```{r}
+library(e1071)
+model3 <- svm(classe ~. , data=trainingsub, method="class")
+prediction3 <- predict(model3, testingsub, type = "class")
+confusionMatrix(prediction3, testingsub$classe)
+```
+
+## Comparison
+So far it seems that the three models each has accuracy of 73.94% (rpart), 99.37% (randomForest) and 94.47% (SVM), therefore I picked randomForest to run with our testing dataset.
+```{r}
+testresult <- predict(model2, testing, type = "class")
+testresult
+```
+
